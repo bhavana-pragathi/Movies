@@ -32,6 +32,12 @@ const convertDbObjectToResponseObject = (dbObject) => {
     directorId: dbObject.director_id,
     movieName: dbObject.movie_name,
     leadActor: dbObject.lead_actor,
+  };
+};
+
+const convertDirectorDbObjectToResponseObject = (dbObject) => {
+  return {
+    directorId: dbObject.director_id,
     directorName: dbObject.director_name,
   };
 };
@@ -39,11 +45,24 @@ const convertDbObjectToResponseObject = (dbObject) => {
 app.get("/movies/", async (request, response) => {
   const movieQuery = `
     SELECT
-      *
+      movie_name
     FROM 
       movie;`;
   const movieArray = await database.all(movieQuery);
-  response.send(movieArray);
+  response.send(
+    getMovie.map((eachMovie) => ({ movieName: eachMovie.movie_name }))
+  );
+});
+
+app.get("/movies/:movieId/", async (request, response) => {
+  const { movieId } = request.params;
+  const getMovieQuery = `
+    SELECT
+    *
+    FROM movie 
+    WHERE movie_id=${movieId};`;
+  const getMovie = await database.get(getMovieQuery);
+  response.send(convertMovieDbObjectToResponseObject(movie));
 });
 
 app.post("/movies/", async (request, response) => {
@@ -53,21 +72,8 @@ app.post("/movies/", async (request, response) => {
     movie (director_id, movie_name, lead_actor)
     VALUES 
     (${directorId}, '${movieName}', '${leadActor}');`;
-  const postMovie = await database.run(postMovieQuery);
+  await database.run(postMovieQuery);
   response.send("Movie Successfully Added");
-});
-
-app.get("/movies/:movieId/", async (request, response) => {
-  const { movieId } = request.body;
-  const getMovieQuery = `
-    SELECT
-    *
-    FROM movie 
-    WHERE movie_id=${movieId};`;
-  const getMovie = await database.get(getMovieQuery);
-  response.send(
-    getMovie.map((eachMovie) => ({ movieName: eachMovie.movie_name }))
-  );
 });
 
 app.put("/movies/:movieId/", async (request, response) => {
@@ -105,20 +111,26 @@ app.get("/directors/", async (request, response) => {
     FROM 
       director;`;
   const directorArray = await database.all(directorQuery);
-  response.send(directorArray);
+  response.send(
+    directorsArray.map((eachDirector) =>
+      convertDirectorDbObjectToResponseObject(eachDirector)
+    )
+  );
 });
 
 app.get("/directors/:directorId/movies/", async (request, response) => {
-  const { movieName } = request.params;
+  const { directorId } = request.params;
   const getAllMoviesQuery = `
     SELECT
-    *
+    movie_name
     FROM
-        book
+        movie
     WHERE
-        movie_name = ${movieName};`;
+        director_id = ${directorId};`;
   const moviesArray = await db.all(getAllMoviesQuery);
-  response.send(moviesArray);
+  response.send(
+    moviesArray.map((eachMovie) => ({ movieName: eachMovie.movie_name }))
+  );
 });
 
 module.exports = app;
