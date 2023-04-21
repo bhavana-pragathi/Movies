@@ -65,7 +65,9 @@ app.get("/movies/:movieId/", async (request, response) => {
     FROM movie 
     WHERE movie_id=${movieId};`;
   const getMovie = await database.get(getMovieQuery);
-  response.send(convertDbObjectToResponseObject(getMovie));
+  response.send(
+    getMovie.map((eachMovie) => ({ movieName: eachMovie.movie_name }))
+  );
 });
 
 app.put("/movies/:movieId/", async (request, response) => {
